@@ -1,6 +1,6 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.23;
 
-import './ERC20Files/MintableToken.sol';
+import './MintableToken.sol';
 
 
 contract RankToken is MintableToken {
@@ -14,42 +14,39 @@ contract RankToken is MintableToken {
     }
     
     
-    mapping(address => mapping(uint256 => Score)) rankings;
+    mapping(address => mapping(bytes32 => Score)) rankings;
     
     function () payable {
-        if(cost > 0) { mint(msg.sender); }
-        else{
-            balances[msg.sender].add(10000*10**decimals); 
-            totalSupply = totalSupply.add(10000*10**decimals);
-        }
+        mint(msg.sender); 
+
     }
     
     
-    function RankToken(){
-        totalSupply = 10000*10**decimals;
-        cumulativeSupply = 10000*10**decimals;
+    constructor(){
+        _totalSupply = 10000*10**decimals;
+        _cumulativeSupply = 10000*10**decimals;
         balances[owner] = 10000*10**decimals;
         cost = 0.00001 ether;
     }
     
     function safeChange(uint256 amount) returns (uint256){
-        return (amount*cumulativeSupply)/(totalSupply*10**18);
+        return (amount*_cumulativeSupply)/(_totalSupply*10**18);
         
     }
 
     
-    function changeScore(address addr, uint256 amount, bool down){
+    function changeScore(address addr,bytes32 index, uint256 amount, bool down){
         require(balances[msg.sender] >= amount);
-        require(amount >= (totalSupply*10**decimals)/cumulativeSupply);
+        require(amount >= (_totalSupply*10**decimals)/_cumulativeSupply);
         balances[msg.sender] -= amount;
-        totalSupply -= amount;
+        _totalSupply -= amount;
         
-        if(down){rankings[addr][0].score -= int(safeChange(amount));}
-        else{rankings[addr][0].score += int(safeChange(amount));}
+        if(down){rankings[addr][index].score -= int(safeChange(amount));}
+        else{rankings[addr][index].score += int(safeChange(amount));}
         
     }
     
-    function getScore(uint index) returns (int256){
+    function getScore(bytes32 index) returns (int256){
         return rankings[msg.sender][index].score;
     }
     
